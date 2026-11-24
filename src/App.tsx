@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, ty
 
 const LOGIN_URL = 'https://rsdigitallab.com/rsconnect/login';
 const CONTACT_URL = 'https://rsdigitallab.com';
-const ASSET = '/assets/';
+const ASSET = `${import.meta.env.BASE_URL}assets/`;
 
 type IconName = 'arrow' | 'message' | 'users' | 'calendar' | 'robot' | 'layers' | 'chart' | 'zap' | 'check' | 'shield' | 'whatsapp' | 'menu' | 'x' | 'play' | 'lock';
 function Icon({ name, className = '' }: { name: IconName; className?: string }) {
