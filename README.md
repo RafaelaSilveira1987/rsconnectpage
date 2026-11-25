@@ -11,9 +11,10 @@ Nova landing independente da plataforma **RS Connect**, construída em **React 1
 - Contadores animados ao rolar, seis módulos que surgem e inclinam com o cursor e seção interativa com linha de progresso em quatro etapas.
 - CRM em Kanban ilustrativo com destaque progressivo entre colunas.
 - Perguntas frequentes, chamada comercial com anéis giratórios e ligações para o login existente; o rodapé permanece estático.
+- Painel lateral de demonstração em duas etapas, aberto pelos CTAs comerciais, com confirmação simulada e acessível em celular.
 - Controle global para **pausar/retomar movimento** e respeito ao modo de movimento reduzido do sistema.
 
-**Atenção:** telas, nomes de contatos, mensagens e funis são **demonstrações fictícias**, não dados reais do sistema. A landing não executa mensagens, agendamentos, IA, cobranças nem coleta de leads. Os CTAs comerciais apontam para `https://rsdigitallab.com`, e os de acesso para `https://rsdigitallab.com/rsconnect/login`.
+**Atenção:** telas, nomes de contatos, mensagens, funis e confirmação do formulário são **demonstrações fictícias**, não dados reais do sistema. O formulário não envia nem armazena dados e ainda precisa de um destino seguro de leads para funcionar comercialmente. A landing não executa mensagens, agendamentos, IA nem cobranças. Os CTAs de acesso apontam para `https://rsdigitallab.com/rsconnect/login`.
 
 ## Projeto-fonte
 
@@ -55,7 +56,7 @@ npm run preview
 6. Faça o deploy. O Dockerfile instalará as dependências, executará TypeScript + Vite e publicará apenas `dist/` no Nginx.
 7. Confira no domínio público o carregamento do vídeo, as cenas durante a rolagem, o menu móvel, as interações e o botão de pausa.
 
-> A landing é projetada para a **raiz de um domínio ou subdomínio**. Se desejar montá-la em um subcaminho, ajuste `base` do `vite.config.ts` e o roteamento do proxy antes de publicar.
+> O projeto está configurado para o subcaminho **`/rsconnectsystem/`** em `vite.config.ts` e `nginx.conf`. Se publicar na raiz de um domínio, alinhe essas duas configurações antes do deploy.
 
 ## Manutenção
 
@@ -63,7 +64,7 @@ npm run preview
 - Alterar cores e efeitos: `src/styles.css` (variáveis `:root`).
 - Trocar o vídeo: `public/assets/video/rs-connect-cinematic.mp4` (autoral/local; ideal MP4 H.264 sem áudio).
 - Alterar logo: `public/assets/img/rs-connect-logo-clara.png` (gerada a partir do ativo original fornecido).
-- Ajustar URLs: constantes `LOGIN_URL` e `CONTACT_URL` no topo de `src/App.tsx`.
+- Ajustar a URL de acesso: constante `LOGIN_URL` no topo de `src/App.tsx`.
 
 ## Integridade e limitações
 

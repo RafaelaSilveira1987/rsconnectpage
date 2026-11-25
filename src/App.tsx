@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 
 const LOGIN_URL = 'https://rsdigitallab.com/rsconnect/login';
-const CONTACT_URL = 'https://rsdigitallab.com';
 const ASSET = `${import.meta.env.BASE_URL}assets/`;
 
 type IconName = 'arrow' | 'message' | 'users' | 'calendar' | 'robot' | 'layers' | 'chart' | 'zap' | 'check' | 'shield' | 'whatsapp' | 'menu' | 'x' | 'play' | 'lock';
@@ -37,6 +36,30 @@ const conversations = [
   ['Preciso falar sobre um orçamento.', 'Vamos organizar sua solicitação para a equipe.', 'Obrigado! Aguardo o retorno.'],
   ['Posso continuar um atendimento anterior?', 'Vamos consultar o contexto da sua solicitação.', 'Ótimo, era isso mesmo!'],
 ];
+
+const demoInterests = ['Atendimento', 'Inteligência artificial', 'CRM e vendas', 'Agenda e processos', 'Tudo isso'];
+
+type DemoDetails = {
+  name: string;
+  phone: string;
+  company: string;
+  interests: string[];
+  notes: string;
+};
+
+const emptyDemoDetails = (): DemoDetails => ({ name: '', phone: '', company: '', interests: [], notes: '' });
+
+function formatBrazilianPhone(value: string) {
+  let digits = value.replace(/\D/g, '');
+  if (digits.length > 11 && digits.startsWith('55')) digits = digits.slice(2);
+  digits = digits.slice(0, 11);
+  if (digits.length < 3) return digits ? `(${digits}` : '';
+  const area = digits.slice(0, 2);
+  const number = digits.slice(2);
+  const split = number.length > 8 ? 5 : 4;
+  if (number.length <= split) return `(${area}) ${number}`;
+  return `(${area}) ${number.slice(0, split)}-${number.slice(split)}`;
+}
 
 function useReducedMotion() {
   const [reduce, setReduce] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -91,7 +114,7 @@ function isVisible(selector: string) {
   return r.top < innerHeight * .92 && r.bottom > innerHeight * .06;
 }
 
-function Header({ paused, reduce, onToggle }: { paused: boolean; reduce: boolean; onToggle: () => void }) {
+function Header({ paused, reduce, onToggle, onDemo }: { paused: boolean; reduce: boolean; onToggle: () => void; onDemo: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const close = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
@@ -106,9 +129,10 @@ function Header({ paused, reduce, onToggle }: { paused: boolean; reduce: boolean
         <a className="brand" href="#inicio" aria-label="RS Connect — início" onClick={() => setMenuOpen(false)}><img src={`${ASSET}img/rs-connect-logo-clara.png`} width="210" height="64" alt="RS Connect" /></a>
         <nav className={`main-nav${menuOpen ? ' is-open' : ''}`} id="primaryNav" aria-label="Navegação principal">
           {nav.map(([text,url]) => <a key={text} href={url} onClick={() => setMenuOpen(false)}>{text}</a>)}
+          <button className="mobile-nav-demo" type="button" onClick={() => { setMenuOpen(false); onDemo(); }}>Agendar demonstração</button>
           <a className="mobile-nav-login" href={LOGIN_URL} target="_blank" rel="noreferrer">Acessar sistema</a>
         </nav>
-        <div className="nav-actions"><a className="login-link" href={LOGIN_URL} target="_blank" rel="noreferrer">Acessar sistema</a><a className="btn btn-sm btn-primary nav-cta" href="#contato">Conhecer a RS Connect <Icon name="arrow" /></a></div>
+        <div className="nav-actions"><a className="login-link" href={LOGIN_URL} target="_blank" rel="noreferrer">Acessar sistema</a><button className="btn btn-sm btn-primary nav-cta" type="button" onClick={onDemo}>Agendar demonstração <Icon name="arrow" /></button></div>
         {!reduce && <button className="motion-top-control" type="button" aria-pressed={paused} title={paused ? 'Retomar animações' : 'Pausar animações'} onClick={onToggle}><span className="motion-top-dot" />{paused ? 'Retomar' : 'Pausar'} movimento</button>}
         <button className="menu-toggle" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-controls="primaryNav" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><Icon name={menuOpen ? 'x' : 'menu'} /></button>
       </div>
@@ -141,7 +165,7 @@ function DashboardPreview({ chatIndex, onPointerMove, onPointerLeave }: { chatIn
   </div>;
 }
 
-function Hero({ paused, reduce }: { paused: boolean; reduce: boolean }) {
+function Hero({ paused, reduce, onDemo }: { paused: boolean; reduce: boolean; onDemo: () => void }) {
   const film = useRef<HTMLVideoElement>(null);
   const scene = useRef<HTMLDivElement>(null);
   const [chatIndex, setChatIndex] = useState(0);
@@ -177,13 +201,135 @@ function Hero({ paused, reduce }: { paused: boolean; reduce: boolean }) {
       <div className="hero-copy"><div className="hero-eyebrow eyebrow"><span className="eyebrow-dot" /> INTELIGÊNCIA PARA UMA OPERAÇÃO CONECTADA</div>
         <h1 className="hero-title" id="hero-title"><span className="cinema-line"><span className="cinema-word">ATENDIMENTO</span></span><span className="cinema-line"><span className="cinema-word">ORGANIZADO</span>{' '}<span className="cinema-word">E</span></span><span className="cinema-line"><span className="type-gradient cinema-word">AUTOMÁTICO.</span></span></h1>
         <p className="hero-lead"><strong>Sua operação conectada, em tempo real.</strong> WhatsApp, atendimento, agenda, clientes, CRM e automações trabalhando juntos em uma única experiência.</p>
-        <div className="hero-cta"><a className="btn btn-primary" href="#experiencia">Viva a experiência <Icon name="arrow" /></a><a className="btn btn-outline" href="#modulos">Explore os módulos <Icon name="layers" /></a></div>
+        <div className="hero-cta"><button className="btn btn-primary" type="button" onClick={onDemo}>Quero conhecer a RS Connect <Icon name="arrow" /></button><a className="btn btn-outline" href="#modulos">Explore os módulos <Icon name="layers" /></a></div>
         <div className="hero-proof"><span className="mini-trace" />WHATSAPP <i /> IA CONFIGURÁVEL <i /> CRM <i /> AGENDA</div>
       </div>
       <div ref={scene} className="hero-visual-holder"><DashboardPreview chatIndex={chatIndex} onPointerMove={handlePointer} onPointerLeave={() => { if (scene.current) scene.current.style.transform=''; }} /></div>
     </div>
     <div className="scroll-hint"><span className="scroll-hint-line"/>ROLE PARA EXPLORAR</div>
   </section>;
+}
+
+type DemoStage = 'contact' | 'needs' | 'success';
+
+function DemoPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const phoneInput = useRef<HTMLInputElement>(null);
+  const [stage, setStage] = useState<DemoStage>('contact');
+  const [details, setDetails] = useState<DemoDetails>(emptyDemoDetails);
+  const [phoneError, setPhoneError] = useState('');
+  const [interestError, setInterestError] = useState('');
+
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    if (open && !element.open) element.showModal();
+    else if (!open && element.open) element.close();
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [open]);
+
+  const close = () => {
+    setStage('contact');
+    setDetails(emptyDemoDetails());
+    setPhoneError('');
+    setInterestError('');
+    onClose();
+  };
+  const onContactSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
+    if (details.phone.replace(/\D/g, '').length < 10) {
+      setPhoneError('Informe um WhatsApp com DDD para continuar.');
+      phoneInput.current?.focus();
+      return;
+    }
+    setPhoneError('');
+    setStage('needs');
+  };
+  const onNeedsSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!details.interests.length) {
+      setInterestError('Escolha pelo menos uma opção para personalizar a demonstração.');
+      return;
+    }
+    setInterestError('');
+    setStage('success');
+  };
+  const toggleInterest = (interest: string) => {
+    setDetails(current => {
+      const selected = current.interests.includes(interest);
+      if (interest === 'Tudo isso') return { ...current, interests: selected ? [] : ['Tudo isso'] };
+      const interests = current.interests.filter(item => item !== 'Tudo isso');
+      return { ...current, interests: selected ? interests.filter(item => item !== interest) : [...interests, interest] };
+    });
+    setInterestError('');
+  };
+  const stageNumber = stage === 'contact' ? 1 : 2;
+
+  return <dialog
+    ref={dialog}
+    className="demo-dialog"
+    aria-labelledby={stage === 'contact' ? 'demo-contact-title' : stage === 'needs' ? 'demo-needs-title' : 'demo-success-title'}
+    onCancel={event => { event.preventDefault(); close(); }}
+    onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); close(); } }}
+    onClick={event => { if (event.target === event.currentTarget) close(); }}
+  >
+    <div className="demo-panel">
+      <header className="demo-panel-header">
+        <span className="demo-brandline"><i /> RS CONNECT <b>/</b> SUA DEMONSTRAÇÃO</span>
+        <button className="demo-close" type="button" onClick={close} aria-label="Fechar painel" autoFocus><Icon name="x" /></button>
+      </header>
+      <aside className="demo-story">
+        <span className="eyebrow">UMA EXPERIÊNCIA ALÉM DO CONVENCIONAL</span>
+        <h2>SUA PRÓXIMA EVOLUÇÃO <Gradient>COMEÇA AQUI.</Gradient></h2>
+        <p>Veja como atendimento, inteligência artificial e gestão podem se conectar à rotina do seu negócio.</p>
+        <div className="demo-story-tags"><span>ATENDIMENTO</span><span>INTELIGÊNCIA ARTIFICIAL</span><span>CRM</span><span>AGENDA</span></div>
+        <div className="demo-story-orbit" aria-hidden="true"><i /><i /><i /><span><img src={`${ASSET}img/rs-connect-simbolo.png`} alt="" /></span></div>
+        <span className="demo-story-caption">RS CONNECT / EXPERIÊNCIA COMERCIAL</span>
+      </aside>
+      <section className="demo-form-panel">
+        <div className="demo-progress-label"><span>{stage === 'success' ? 'PRÉVIA DE CONFIRMAÇÃO' : `0${stageNumber} / 02 · ${stage === 'contact' ? 'PRIMEIRO CONTATO' : 'SUA OPERAÇÃO'}`}</span><b>{stage === 'success' ? '✓' : `0${stageNumber}`}</b></div>
+        <div className="demo-progress-track" aria-hidden="true"><span style={{ width: stage === 'contact' ? '50%' : '100%' }} /></div>
+        {stage === 'contact' && <form className="demo-stage" onSubmit={onContactSubmit}>
+          <h2 id="demo-contact-title">VAMOS COMEÇAR <Gradient>PELO SEU NEGÓCIO?</Gradient></h2>
+          <p>Uma demonstração que começa pelo que importa para você. Conte-nos só o essencial.</p>
+          <div className="demo-field-grid">
+            <label className="demo-field"><span>Como podemos chamar você? <b>*</b></span><input name="name" autoComplete="name" placeholder="Seu nome" required maxLength={100} value={details.name} onChange={event => setDetails(current => ({ ...current, name: event.target.value }))} /></label>
+            <label className="demo-field"><span>Seu WhatsApp <b>*</b></span><input ref={phoneInput} name="whatsapp" type="tel" inputMode="tel" autoComplete="tel" placeholder="(00) 00000-0000" required maxLength={16} aria-invalid={Boolean(phoneError)} aria-describedby={phoneError ? 'demo-phone-error' : undefined} value={details.phone} onChange={event => { setDetails(current => ({ ...current, phone: formatBrazilianPhone(event.target.value) })); setPhoneError(''); }} />{phoneError && <small className="demo-field-error" id="demo-phone-error" role="alert">{phoneError}</small>}</label>
+            <label className="demo-field demo-field-wide"><span>Nome da empresa <b>*</b></span><input name="company" autoComplete="organization" placeholder="Qual é o seu negócio?" required maxLength={120} value={details.company} onChange={event => setDetails(current => ({ ...current, company: event.target.value }))} /></label>
+          </div>
+          <p className="demo-step-hint">Leva menos de um minuto para chegar à próxima etapa.</p>
+          <button className="btn btn-primary demo-submit" type="submit">Continuar minha experiência <Icon name="arrow" /></button>
+          <p className="demo-safe-note">Nesta prévia, nenhum dado é enviado ou armazenado. A versão real precisará de um canal seguro de recebimento e política de privacidade.</p>
+        </form>}
+        {stage === 'needs' && <form className="demo-stage" onSubmit={onNeedsSubmit}>
+          <h2 id="demo-needs-title">ONDE VOCÊ QUER <Gradient>CHEGAR PRIMEIRO?</Gradient></h2>
+          <p>Escolha os desafios que mais combinam com o seu momento. A apresentação pode ser personalizada para isso.</p>
+          <fieldset className="demo-interest-field">
+            <legend>O que você quer transformar? <span>(selecione uma ou mais opções)</span></legend>
+            <div className="demo-interest-grid">{demoInterests.map((interest,i)=><button className={`demo-interest${details.interests.includes(interest) ? ' selected' : ''}`} key={interest} type="button" aria-pressed={details.interests.includes(interest)} onClick={() => toggleInterest(interest)}><span aria-hidden="true">{['◉','✧','▤','▦','✦'][i]}</span>{interest}</button>)}</div>
+            {interestError && <p className="demo-field-error" role="alert">{interestError}</p>}
+          </fieldset>
+          <label className="demo-field demo-notes"><span>Algo mais que deveríamos saber? <small>(opcional)</small></span><textarea name="notes" rows={3} maxLength={500} placeholder="Ex.: temos várias pessoas atendendo pelo mesmo WhatsApp..." value={details.notes} onChange={event => setDetails(current => ({ ...current, notes: event.target.value }))} /></label>
+          <div className="demo-form-actions"><button className="btn btn-outline demo-back" type="button" onClick={() => setStage('contact')}>← Voltar</button><button className="btn btn-primary demo-submit" type="submit">Solicitar minha demonstração <Icon name="arrow" /></button></div>
+          <p className="demo-safe-note">Ao continuar, você verá uma confirmação ilustrativa. Nenhum dado será enviado ou armazenado.</p>
+        </form>}
+        {stage === 'success' && <div className="demo-stage demo-success">
+          <span className="demo-success-icon"><Icon name="check" /></span>
+          <h2 id="demo-success-title">O PRÓXIMO PASSO <Gradient>COMEÇA AQUI.</Gradient></h2>
+          <p>Imagine sua solicitação chegando ao time comercial, já com o contexto da sua empresa. Na versão real, conectaremos esse fluxo a um destino seguro para leads.</p>
+          <button className="btn btn-primary demo-submit" type="button" onClick={() => { setDetails(emptyDemoDetails()); setStage('contact'); }}>Explorar novamente <span aria-hidden="true">↺</span></button>
+          <p className="demo-safe-note">Nenhuma solicitação foi enviada nesta demonstração.</p>
+        </div>}
+        <div className="demo-form-footer"><span>TECNOLOGIA QUE APROXIMA</span><span>{stage === 'success' ? 'CONFIRMAÇÃO ILUSTRATIVA' : `CAPÍTULO 0${stageNumber} / 02`}</span></div>
+      </section>
+    </div>
+  </dialog>;
 }
 
 function Journey() {
@@ -299,7 +445,7 @@ function Flow({ paused, reduce }: { paused: boolean; reduce: boolean }) {
     <div className="flow-stage reveal" role="tabpanel" aria-live="polite"><div className="flow-stage-top"><span className="small-label">FLUXO EM MOVIMENTO</span><span className="live-dot">CENÁRIO ILUSTRATIVO</span>{!reduce&&<button type="button" className="flow-play-toggle" aria-pressed={localPaused} onClick={()=>setLocalPaused(p=>!p)}>{localPaused?'Reproduzir':'Pausar'} sequência <span aria-hidden="true">{localPaused?'▶':'Ⅱ'}</span></button>}</div><div className="flow-graphic"><div className="flow-orbit"/><div className="flow-center" key={selected}><Icon name={flow[selected].icon} /></div><div className="flow-small f-one"><Icon name="users" /></div><div className="flow-small f-two"><Icon name="robot" /></div><div className="flow-small f-three"><Icon name="calendar" /></div></div><h3 key={`h-${selected}`}>{flow[selected].heading}</h3><p key={`p-${selected}`}>{flow[selected].detail}</p><div className="flow-dots" aria-hidden="true">{flow.map((item,i)=><span key={item.short} className={selected===i?'on':''}/>)}</div></div></div></div></section>;
 }
 
-function CRM({ paused, reduce }: { paused: boolean; reduce: boolean }) {
+function CRM({ paused, reduce, onDemo }: { paused: boolean; reduce: boolean; onDemo: () => void }) {
   const [active,setActive]=useState(0);
   const columns = [
     {title:'Novos contatos',tone:'blue',tickets:[['Contato A','Primeiro atendimento'],['Contato B','Solicitou informações']]},
@@ -312,7 +458,7 @@ function CRM({ paused, reduce }: { paused: boolean; reduce: boolean }) {
     const id=setInterval(()=>{if(!document.hidden&&isVisible('#crm'))setActive(i=>(i+1)%columns.length);},2600);
     return()=>clearInterval(id);
   },[paused,reduce,columns.length]);
-  return <section id="crm" className="section crm-section"><div className="container crm-layout"><div className="crm-copy reveal"><span className="eyebrow">RELACIONAMENTO QUE GERA CONTINUIDADE</span><h2>DO CONTATO À <Gradient>OPORTUNIDADE.</Gradient></h2><p>Um CRM conectado ao atendimento ajuda a visualizar oportunidades, organizar tarefas e acompanhar as próximas ações de cada relacionamento.</p><div className="crm-points">{['Pipeline comercial','Histórico e contexto','Atividades e retornos','Visão por etapa'].map(text=><span key={text}><Icon name="check" /> {text}</span>)}</div><a href="#contato" className="btn btn-outline">Conhecer as possibilidades <Icon name="arrow" /></a></div>
+  return <section id="crm" className="section crm-section"><div className="container crm-layout"><div className="crm-copy reveal"><span className="eyebrow">RELACIONAMENTO QUE GERA CONTINUIDADE</span><h2>DO CONTATO À <Gradient>OPORTUNIDADE.</Gradient></h2><p>Um CRM conectado ao atendimento ajuda a visualizar oportunidades, organizar tarefas e acompanhar as próximas ações de cada relacionamento.</p><div className="crm-points">{['Pipeline comercial','Histórico e contexto','Atividades e retornos','Visão por etapa'].map(text=><span key={text}><Icon name="check" /> {text}</span>)}</div><button type="button" onClick={onDemo} className="btn btn-outline">Agendar demonstração <Icon name="arrow" /></button></div>
     <div className="kanban-wrap reveal"><div className="kanban-head"><strong>RS CONNECT <span>/ Comercial</span></strong><span className="kanban-badge">VISUALIZAÇÃO ILUSTRATIVA</span></div><div className="kanban-cols">{columns.map((column,i)=><div className={`kanban-col${active===i&&!paused&&!reduce?' is-journey-active':''}`} key={column.title}><span className={`col-h ${column.tone}`}>{column.title}<b>{column.tickets.length}</b></span>{column.tickets.map(([name,detail],j)=><div className={`kanban-ticket${active===i&&j===0&&!paused&&!reduce?' is-journey-active':''}`} key={name}><span>{name}</span><small>{detail}</small><i className={`circle ${column.tone}`}/></div>)}</div>)}</div></div></div></section>;
 }
 
@@ -329,25 +475,27 @@ function TrustAndFAQ(){
   </>;
 }
 
-function Footer() {return <>
-  <section id="contato" className="final-section"><div className="container final-card reveal"><div className="final-glow" /><div className="final-rings" aria-hidden="true"><span className="final-ring final-ring-one" /><span className="final-ring final-ring-two" /></div><span className="eyebrow">PRONTO PARA CONECTAR SUA OPERAÇÃO?</span><h2>MENOS SISTEMAS SOLTOS. <Gradient>MAIS POSSIBILIDADES.</Gradient></h2><p>Conheça a RS Connect e descubra como organizar atendimento, relacionamento e operação em uma experiência conectada.</p><div className="final-actions"><a href={CONTACT_URL} className="btn btn-primary" target="_blank" rel="noreferrer">Conhecer a RS Automação Digital <Icon name="arrow" /></a><a href={LOGIN_URL} className="btn btn-outline" target="_blank" rel="noreferrer">Acessar a plataforma <Icon name="arrow" /></a></div><p className="contact-note">Para solicitar uma apresentação comercial, utilize os canais oficiais do site da RS Automação Digital.</p></div></section>
+function Footer({ onDemo }: { onDemo: () => void }) {return <>
+  <section id="contato" className="final-section"><div className="container final-card reveal"><div className="final-glow" /><div className="final-ambient" aria-hidden="true" /><div className="final-rings" aria-hidden="true"><span className="final-ring final-ring-one" /><span className="final-ring final-ring-two" /></div><span className="eyebrow">PRONTO PARA CONECTAR SUA OPERAÇÃO?</span><h2>MENOS SISTEMAS SOLTOS. <Gradient>MAIS POSSIBILIDADES.</Gradient></h2><p>Conheça a RS Connect e descubra como organizar atendimento, relacionamento e operação em uma experiência conectada.</p><div className="final-actions"><button type="button" className="btn btn-primary" onClick={onDemo}>Transforme sua operação. Fale conosco. <Icon name="arrow" /></button><a href={LOGIN_URL} className="btn btn-outline" target="_blank" rel="noreferrer">Acessar a plataforma <Icon name="arrow" /></a></div><p className="contact-note">Esta demonstração é uma prévia visual; os dados não são enviados nem armazenados.</p></div></section>
   <footer className="footer"><div className="container footer-grid"><a href="#inicio" aria-label="Voltar ao topo"><img src={`${ASSET}img/rs-connect-logo-clara.png`} alt="RS Connect" width="195" height="60" /></a><p>Atendimento inteligente. Conversas que geram resultados.</p><div className="footer-links"><a href="#modulos">Módulos</a><a href="#duvidas">Dúvidas</a><a href={LOGIN_URL} target="_blank" rel="noreferrer">Login</a></div></div><div className="container footer-bottom"><span>© {new Date().getFullYear()} RS Connect. Todos os direitos reservados.</span><span>Uma solução RS Automação Digital</span></div></footer>
 </>}
 
 export default function App() {
   const reduce = useReducedMotion();
   const [paused,setPaused]=useState(false);
+  const [demoOpen,setDemoOpen]=useState(false);
   usePageEffects();
   useEffect(()=>{ document.documentElement.classList.toggle('motion-paused', paused || reduce); return()=>document.documentElement.classList.remove('motion-paused'); },[paused,reduce]);
   const activePause = paused || reduce;
   return <>
     <a href="#inicio" className="skip-link">Pular para o conteúdo</a>
-    <Header paused={activePause} reduce={reduce} onToggle={()=>setPaused(p=>!p)} />
+    <Header paused={activePause} reduce={reduce} onToggle={()=>setPaused(p=>!p)} onDemo={()=>setDemoOpen(true)} />
+    <DemoPanel open={demoOpen} onClose={()=>setDemoOpen(false)} />
     <main id="inicio">
-      <Hero paused={activePause} reduce={reduce}/>
+      <Hero paused={activePause} reduce={reduce} onDemo={()=>setDemoOpen(true)}/>
       <div className="marquee" aria-label="Recursos integrados"><div className="marquee-track">{[0,1].map(n=><span className="marquee-group" key={n}>{['ATENDIMENTO INTELIGENTE','IA CONFIGURÁVEL','CRM COMPLETO','AGENDA INTEGRADA','AUTOMAÇÕES','CONTROLE HUMANO'].map(text=><span key={text}><b>✦</b>{text}</span>)}</span>)}</div></div>
       <Journey/>
-      <Intro/><Stats reduce={reduce}/><Modules paused={activePause}/><Flow paused={activePause} reduce={reduce}/><CRM paused={activePause} reduce={reduce}/><TrustAndFAQ/><Footer/>
+      <Intro/><Stats reduce={reduce}/><Modules paused={activePause}/><Flow paused={activePause} reduce={reduce}/><CRM paused={activePause} reduce={reduce} onDemo={()=>setDemoOpen(true)}/><TrustAndFAQ/><Footer onDemo={()=>setDemoOpen(true)}/>
     </main>
     <button type="button" className="back-to-top" onClick={()=>window.scrollTo({top:0,behavior:reduce?'instant':'smooth'})} aria-label="Voltar ao início"><Icon name="arrow"/></button>
     <div className="cinematic-cursor-glow" aria-hidden="true" style={{'--cursor-alpha': activePause ? '0' : '.12'} as CSSProperties} />
